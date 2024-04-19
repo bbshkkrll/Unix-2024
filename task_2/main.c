@@ -11,7 +11,7 @@ int attempt_count = 0;
 
 
 void termination_handler(int signum) {
-    FILE* f_result = fopen("result.txt", "w");
+    FILE* f_result = fopen("result.txt", "a");
     fprintf(f_result, "[%d] %d/%d (success/all)\n", getpid(), success_attempt_count, attempt_count);
     fclose(f_result);
 
@@ -21,45 +21,58 @@ void termination_handler(int signum) {
 
 int main(int argc, char *argv[])
 {
-
     signal(SIGINT, termination_handler);
-    while (1) {
-        char *source_filename = argv[1];
-        char lockfile[128];
-        sleep(0.0003);
-        sprintf(lockfile, "%s.lck", source_filename);
 
-        while (access(lockfile, F_OK) == 0) {
-             sleep(0.0001);
+    char *source_filename = argv[1];
+    char lockfile[128];
+    sprintf(lockfile, "%s.lck", source_filename);
+
+
+    while (1) {
+//        char *source_filename = argv[1];
+//        char lockfile[128];
+//        sprintf(lockfile, "%s.lck", source_filename);
+
+        FILE* lock_w;
+
+        if ((lock_w = fopen(lockfile, "wx")) == NULL) {
+            continue;
         }
 
+//        FILE* lock_w = fopen(lockfile, "wx");
         printf("[%d] Creating lockfile\n", getpid());
-        int lock_fd = open(lockfile, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
-        char spid[16];
-        sprintf(spid, "%d", getpid());
-        write(lock_fd, spid, strlen(spid));
-        close(lock_fd);
+        fprintf(lock_w, "%d", getpid());
+        fflush(lock_w);
 
-        int source_fd = open(source_filename, O_WRONLY, S_IRUSR | S_IWUSR);
-        lseek(source_fd, 0, SEEK_END);
-        write(source_fd, ".", 1);
-        sleep(3);
-        close(source_fd);
+        FILE* source_fd = fopen(source_filename, "a");
+        fprintf(source_fd, "[%d]", getpid());
+        sleep(1);
+        fclose(source_fd);
 
-       int stored_pid;
-       char input[8];
-       lock_fd = open(lockfile, O_RDONLY, S_IRUSR | S_IWUSR);
-       read(lock_fd, input, sizeof(input));
 
-       stored_pid = atoi(input);
+        FILE* lock_r = fopen(lockfile, "r");
+        char input[128];
+        fgets(input, sizeof(input), lock_r);
+        
+        int stored_pid = atoi(input);
+        
 
-       if (stored_pid == getpid()) {
-           printf("[%d] Removing %s\n", getpid(), lockfile);
-           remove(lockfile);
-       } else {
-           exit(1);
-           printf("[%d] Exit...\n", getpid());
-       }
+        fclose(lock_w);
+        fclose(lock_r);
+        stored_pid = atoi(input);
+        attempt_count++;
+
+        if (stored_pid == getpid()) {
+            printf("[%d] Removing %s\n", getpid(), lockfile);
+            remove(lockfile);
+            success_attempt_count++;
+        } else {
+            printf("[%d] Exit...\n", getpid());
+            FILE* f_result = fopen("result.txt", "a");
+            fprintf(f_result, "[%d] %d/%d (success/all)\n", getpid(), success_attempt_count, attempt_count);
+            fclose(f_result);
+            exit(1);
+        }
     }
 
     return 0;
