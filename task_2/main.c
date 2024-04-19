@@ -12,7 +12,7 @@ int attempt_count = 0;
 
 void termination_handler(int signum) {
     FILE* f_result = fopen("result.txt", "a");
-    fprintf(f_result, "[%d] %d/%d (success/all)\n", getpid(), success_attempt_count, attempt_count);
+    fprintf(f_result, "[%d] %d/%d (lock/all_attempts)\n", getpid(), success_attempt_count, attempt_count);
     fclose(f_result);
 
     exit(0);
@@ -29,18 +29,13 @@ int main(int argc, char *argv[])
 
 
     while (1) {
-//        char *source_filename = argv[1];
-//        char lockfile[128];
-//        sprintf(lockfile, "%s.lck", source_filename);
-
         FILE* lock_w;
 
         if ((lock_w = fopen(lockfile, "wx")) == NULL) {
             continue;
         }
 
-//        FILE* lock_w = fopen(lockfile, "wx");
-        printf("[%d] Creating lockfile\n", getpid());
+//        printf("[%d] Creating lockfile\n", getpid());
         fprintf(lock_w, "%d", getpid());
         fflush(lock_w);
 
@@ -49,13 +44,10 @@ int main(int argc, char *argv[])
         sleep(1);
         fclose(source_fd);
 
-
         FILE* lock_r = fopen(lockfile, "r");
         char input[128];
         fgets(input, sizeof(input), lock_r);
-        
         int stored_pid = atoi(input);
-        
 
         fclose(lock_w);
         fclose(lock_r);
@@ -63,13 +55,13 @@ int main(int argc, char *argv[])
         attempt_count++;
 
         if (stored_pid == getpid()) {
-            printf("[%d] Removing %s\n", getpid(), lockfile);
+//            printf("[%d] Removing %s\n", getpid(), lockfile);
             remove(lockfile);
             success_attempt_count++;
         } else {
-            printf("[%d] Exit...\n", getpid());
+//            printf("[%d] Exit...\n", getpid());
             FILE* f_result = fopen("result.txt", "a");
-            fprintf(f_result, "[%d] %d/%d (success/all)\n", getpid(), success_attempt_count, attempt_count);
+            fprintf(f_result, "[%d] %d/%d (lock/all_attempts)\n", getpid(), success_attempt_count, attempt_count);
             fclose(f_result);
             exit(1);
         }

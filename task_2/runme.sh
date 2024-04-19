@@ -2,6 +2,8 @@ rm source.lck 2>>/dev/null
 rm source 2>>/dev/null
 rm result.txt 2>>/dev/null
 
+make myprogram 1>>/dev/null
+
 touch source
 
 pids=()
@@ -12,7 +14,7 @@ do
     pids+=($!)
 done
 
-sleep 15
-echo ${pids[*]}
+sleep 300
 kill -2 ${pids[*]}
 
+make clean 1>>/dev/null
