@@ -7,12 +7,10 @@
 #include <signal.h>
 
 int success_attempt_count = 0;
-int attempt_count = 0;
-
 
 void termination_handler(int signum) {
     FILE* f_result = fopen("result.txt", "a");
-    fprintf(f_result, "[%d] %d/%d (lock/all_attempts)\n", getpid(), success_attempt_count, attempt_count);
+    fprintf(f_result, "[%d] succes locks: %d\n", getpid(), success_attempt_count);
     fclose(f_result);
 
     exit(0);
@@ -52,7 +50,6 @@ int main(int argc, char *argv[])
         fclose(lock_w);
         fclose(lock_r);
         stored_pid = atoi(input);
-        attempt_count++;
 
         if (stored_pid == getpid()) {
 //            printf("[%d] Removing %s\n", getpid(), lockfile);
@@ -61,7 +58,7 @@ int main(int argc, char *argv[])
         } else {
 //            printf("[%d] Exit...\n", getpid());
             FILE* f_result = fopen("result.txt", "a");
-            fprintf(f_result, "[%d] %d/%d (lock/all_attempts)\n", getpid(), success_attempt_count, attempt_count);
+            fprintf(f_result, "[%d] success locks: %d\n", getpid(), success_attempt_count);
             fclose(f_result);
             exit(1);
         }

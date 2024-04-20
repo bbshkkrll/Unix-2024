@@ -15,6 +15,6 @@ do
 done
 
 sleep 300
-kill -2 ${pids[*]}
+kill -2 ${pids[*]} 1>>/dev/null
 
 make clean 1>>/dev/null
